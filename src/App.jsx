@@ -1,4 +1,8 @@
 import WebsiteIntelligence from "./components/WebsiteIntelligence.jsx";
+import {
+  analyzeEmail,
+  analyzeMessage,
+} from "./services/messageAnalyzer";
 import { useState } from "react";
 import {
   ShieldCheck, ArrowUpRight, Search, Link2, Mail,
@@ -83,51 +87,62 @@ function App() {
     setError("");
   }
 
-  function handleAnalyze(event) {
-    event.preventDefault();
-    setError("");
-    setResult(null);
+  
+function handleAnalyze(event) {
+  event.preventDefault();
+  setError("");
+  setResult(null);
 
-    if (!inputValue.trim()) {
-      setError("Please enter a website URL before starting the analysis.");
-      return;
-    }
-
-    if (analysisType !== "url") {
-      setError("Please select URL. Email and message analysis are not available yet.");
-      return;
-    }
-
-    setIsAnalyzing(true);
-
-    window.setTimeout(() => {
-      try {
-        const analysis = analyzeURL(inputValue);
-
-        setResult(analysis);
-
-        try {
-          const updatedHistory = saveScanToHistory(analysis);
-          setHistory(updatedHistory);
-          setHistoryMessage("");
-        } catch (storageError) {
-          setHistoryMessage(
-            storageError instanceof Error
-              ? storageError.message
-              : "The analysis completed, but its history could not be saved."
-          );
-        }
-      } catch (analysisError) {
-        setError(
-          analysisError instanceof Error
-            ? analysisError.message
-            : "Unable to analyze this URL. Please check your input."
-        );
-      } finally {
-        setIsAnalyzing(false);
-      }
-    }, 650);
+  if (!inputValue.trim()) {
+    setError(
+      analysisType === "email"
+        ? "Please paste an email or email content to analyze."
+        : analysisType === "message"
+          ? "Please enter a message to analyze."
+          : "Please enter a website URL before starting the analysis."
+    );
+    return;
   }
+
+  setIsAnalyzing(true);
+
+  window.setTimeout(() => {
+    try {
+      let analysis;
+
+      if (analysisType === "email") {
+        analysis = analyzeEmail(inputValue);
+      } else if (analysisType === "message") {
+        analysis = analyzeMessage(inputValue);
+      } else {
+        analysis = analyzeURL(inputValue);
+      }
+
+      setResult(analysis);
+
+      try {
+        const updatedHistory = saveScanToHistory(analysis);
+        setHistory(updatedHistory);
+        setHistoryMessage("");
+      } catch (storageError) {
+        setHistoryMessage(
+          storageError instanceof Error
+            ? storageError.message
+            : "The analysis completed, but its history could not be saved."
+        );
+      }
+    } catch (analysisError) {
+      setError(
+        analysisError instanceof Error
+          ? analysisError.message
+          : "Unable to analyze this input. Please check it and try again."
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, 400);
+}
+
 
   function resetAnalysis() {
     setResult(null);
