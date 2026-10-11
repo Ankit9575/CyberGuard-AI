@@ -1,0 +1,6 @@
+
+Flask
+Flask-Cors
+dnspython
+requests
+gunicorn
